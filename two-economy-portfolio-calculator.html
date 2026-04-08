@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Two Economy Portfolio Calculator — The Wealth Society</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0f14;
+      --surface: #161922;
+      --surface-2: #1e2330;
+      --border: rgba(255,255,255,0.08);
+      --text-primary: #f0f2f5;
+      --text-secondary: #8b91a0;
+      --teal: #1D9E75;
+      --teal-light: #25c490;
+      --teal-bg: rgba(29,158,117,0.10);
+      --teal-border: rgba(29,158,117,0.30);
+      --gray: #888780;
+      --red: #E24B4A;
+      --red-bg: rgba(226,75,74,0.10);
+      --red-border: rgba(226,75,74,0.30);
+      --blue-bg: rgba(55,138,221,0.10);
+      --blue-border: rgba(55,138,221,0.30);
+      --blue-text: #378ADD;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: 'Georgia', 'Times New Roman', serif;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    .container { max-width: 860px; margin: 0 auto; }
+
+    .eyebrow {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 500;
+      color: var(--text-primary);
+      line-height: 1.3;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      font-size: 15px;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+      line-height: 1.6;
+    }
+
+    .pills {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+    }
+
+    .pill {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 500;
+      border: 0.5px solid;
+    }
+
+    .pill-gray { background: rgba(136,135,128,0.12); border-color: rgba(136,135,128,0.3); color: #b0afa8; }
+    .pill-teal { background: var(--teal-bg); border-color: var(--teal-border); color: var(--teal-light); }
+    .pill-blue { background: var(--blue-bg); border-color: var(--blue-border); color: var(--blue-text); }
+
+    .card {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .card-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 1rem;
+    }
+
+    .slider-row { margin-bottom: 1.25rem; }
+    .slider-row:last-child { margin-bottom: 0; }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 6px;
+    }
+
+    .slider-header label { font-size: 13px; color: var(--text-secondary); }
+    .slider-header label span { font-size: 11px; opacity: 0.7; }
+    .slider-value { font-size: 15px; font-weight: 500; color: var(--text-primary); }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--surface-2);
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: var(--teal);
+      cursor: pointer;
+      border: 2px solid var(--bg);
+      box-shadow: 0 0 0 1px var(--teal);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: var(--teal);
+      cursor: pointer;
+      border: 2px solid var(--bg);
+    }
+
+    .slider-limits { display: flex; justify-content: space-between; margin-top: 4px; }
+    .slider-limits span { font-size: 11px; color: var(--text-secondary); opacity: 0.6; }
+    .cap-note { font-size: 11px; color: var(--teal); margin-top: 6px; min-height: 16px; }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+      gap: 10px;
+      margin-bottom: 1rem;
+    }
+
+    .economy-card {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+    }
+
+    .economy-card.new-econ {
+      border-color: var(--teal-border);
+      background: linear-gradient(135deg, var(--surface) 60%, rgba(29,158,117,0.05));
+    }
+
+    .econ-badge { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+
+    .badge-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+    .badge-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; }
+
+    .econ-examples { font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; line-height: 1.5; }
+    .econ-growth { font-size: 11px; color: var(--text-secondary); margin-bottom: 14px; }
+    .econ-growth strong { color: var(--text-primary); }
+    .econ-row-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 2px; }
+    .econ-row-value { font-size: 26px; font-weight: 500; margin-bottom: 10px; }
+    .econ-gain { font-size: 12px; margin-top: -6px; }
+
+    .bar-wrap {
+      height: 28px; border-radius: 6px; overflow: hidden;
+      display: flex; margin-bottom: 10px;
+    }
+
+    .bar-old { height: 100%; background: var(--gray); display: flex; align-items: center; justify-content: center; transition: width 0.35s ease; }
+    .bar-new { height: 100%; background: var(--teal); display: flex; align-items: center; justify-content: center; transition: width 0.35s ease; }
+    .bar-text { font-size: 12px; font-weight: 500; color: #fff; white-space: nowrap; padding: 0 6px; }
+
+    .legend { display: flex; gap: 20px; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-secondary); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+    .chart-wrap { position: relative; width: 100%; height: 280px; margin-bottom: 1rem; }
+
+    .info-box {
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      background: var(--blue-bg);
+      border: 0.5px solid var(--blue-border);
+      margin-bottom: 1rem;
+    }
+
+    .info-eyebrow { font-size: 12px; font-weight: 500; color: var(--blue-text); margin-bottom: 10px; }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0,1fr));
+      gap: 10px;
+    }
+
+    .info-item {
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      border: 0.5px solid var(--border);
+    }
+
+    .info-item-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 3px; line-height: 1.4; }
+    .info-item-value { font-size: 16px; font-weight: 500; color: var(--text-primary); }
+
+    .gap-box {
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      background: var(--teal-bg);
+      border: 0.5px solid var(--teal-border);
+      margin-bottom: 1rem;
+    }
+
+    .gap-eyebrow { font-size: 11px; font-weight: 500; color: var(--teal-light); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+    .gap-desc { font-size: 13px; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.6; }
+
+    .gap-compare {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .gap-bucket {
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+      border: 0.5px solid var(--border);
+      padding: 12px 14px;
+    }
+
+    .gap-bucket-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; }
+    .gap-bucket-value { font-size: 22px; font-weight: 500; }
+    .gap-bucket-sub { font-size: 11px; margin-top: 3px; }
+
+    .gap-highlight {
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+      border: 0.5px solid var(--teal-border);
+      padding: 12px 14px;
+    }
+
+    .gap-highlight p { font-size: 15px; font-weight: 500; color: var(--teal-light); }
+    .gap-highlight span { font-size: 11px; color: var(--text-secondary); display: block; margin-top: 4px; line-height: 1.5; }
+
+    .disclaimer {
+      font-size: 11px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      padding-top: 1rem;
+      border-top: 0.5px solid var(--border);
+      margin-top: 0.5rem;
+      opacity: 0.7;
+    }
+
+    @media (max-width: 580px) {
+      h1 { font-size: 22px; }
+      .two-col { grid-template-columns: 1fr; }
+      .info-grid { grid-template-columns: 1fr 1fr; }
+      .gap-compare { grid-template-columns: 1fr; }
+      .econ-row-value { font-size: 20px; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <p class="eyebrow">Portfolio diagnostic · The Wealth Society</p>
+  <h1>Which economy is your money working in?</h1>
+  <p class="subtitle">Adjust the sliders to match your situation and see the 7-year wealth gap in real dollars</p>
+
+  <div class="pills">
+    <span class="pill pill-blue">7-year horizon</span>
+    <span class="pill pill-gray">Old economy: 8% / yr</span>
+    <span class="pill pill-teal">New economy: 15% / yr</span>
+    <span class="pill pill-teal">Max 50% new economy</span>
+  </div>
+
+  <!-- Sliders -->
+  <div class="card">
+    <p class="card-label">Your portfolio</p>
+
+    <div class="slider-row">
+      <div class="slider-header">
+        <label>Total portfolio value <span>(401k + IRA + brokerage)</span></label>
+        <span class="slider-value" id="total-label">$300,000</span>
+      </div>
+      <input type="range" min="50000" max="2000000" value="300000" step="10000" id="total-slider" oninput="update()">
+      <div class="slider-limits"><span>$50k</span><span>$2M</span></div>
+    </div>
+
+    <div class="slider-row">
+      <div class="slider-header">
+        <label>New economy allocation <span>(AI hardware, robotics, energy infra)</span></label>
+        <span class="slider-value" id="new-pct-label">15%</span>
+      </div>
+      <input type="range" min="0" max="50" value="15" step="1" id="new-pct-slider" oninput="update()">
+      <div class="slider-limits"><span>0% — none</span><span>50% — max recommended</span></div>
+      <p class="cap-note" id="cap-note"></p>
+    </div>
+  </div>
+
+  <!-- Economy cards -->
+  <div class="two-col">
+    <div class="economy-card">
+      <div class="econ-badge">
+        <div class="badge-dot" style="background:var(--gray)"></div>
+        <span class="badge-label" style="color:var(--text-secondary)">Old economy</span>
+      </div>
+      <p class="econ-examples">S&amp;P index, Mag 7 software, target date funds, REITs, bonds</p>
+      <p class="econ-growth">Annual growth assumption: <strong>8% / yr</strong></p>
+      <p class="econ-row-label">Today</p>
+      <p class="econ-row-value" id="old-today" style="color:var(--text-primary)">$255,000</p>
+      <p class="econ-row-label">In 7 years</p>
+      <p class="econ-row-value" id="old-7yr" style="color:var(--text-primary)">$436,680</p>
+      <p class="econ-gain" id="old-gain" style="color:var(--text-secondary)">+$181,680 gain</p>
+    </div>
+
+    <div class="economy-card new-econ">
+      <div class="econ-badge">
+        <div class="badge-dot" style="background:var(--teal)"></div>
+        <span class="badge-label" style="color:var(--teal)">New economy</span>
+      </div>
+      <p class="econ-examples">AI hardware, robotics, power grid, critical materials, data center infra</p>
+      <p class="econ-growth">Annual growth assumption: <strong>15% / yr</strong></p>
+      <p class="econ-row-label">Today</p>
+      <p class="econ-row-value" id="new-today" style="color:var(--text-primary)">$45,000</p>
+      <p class="econ-row-label">In 7 years</p>
+      <p class="econ-row-value" id="new-7yr" style="color:var(--teal)">$122,381</p>
+      <p class="econ-gain" id="new-gain" style="color:var(--teal-light)">+$77,381 gain</p>
+    </div>
+  </div>
+
+  <!-- Bar -->
+  <div class="card">
+    <p class="card-label">Where your money sits today</p>
+    <div class="bar-wrap">
+      <div class="bar-old" id="bar-old" style="width:85%"><span class="bar-text" id="bar-old-label">85% old economy</span></div>
+      <div class="bar-new" id="bar-new" style="width:15%"><span class="bar-text" id="bar-new-label">15%</span></div>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--gray)"></div>Old economy (8% / yr)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--teal)"></div>New economy (15% / yr)</div>
+    </div>
+  </div>
+
+  <!-- Chart -->
+  <div class="card">
+    <p class="card-label">7-year growth projection</p>
+    <div class="chart-wrap"><canvas id="growthChart"></canvas></div>
+    <div class="legend" style="margin-top:8px">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--gray)"></div>Your current mix</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--teal)"></div>Optimized (50% new economy)</div>
+    </div>
+  </div>
+
+  <!-- Info row -->
+  <div class="info-box">
+    <p class="info-eyebrow">Your numbers at a glance</p>
+    <div class="info-grid">
+      <div class="info-item">
+        <p class="info-item-label">Blended growth rate</p>
+        <p class="info-item-value" id="blended-rate">9.1%</p>
+      </div>
+      <div class="info-item">
+        <p class="info-item-label">Your portfolio in 7 years</p>
+        <p class="info-item-value" id="info-total-7yr">$559,061</p>
+      </div>
+      <div class="info-item">
+        <p class="info-item-label">Optimized 50/50 in 7 years</p>
+        <p class="info-item-value" style="color:var(--teal)" id="info-optimized">$681,058</p>
+      </div>
+      <div class="info-item">
+        <p class="info-item-label">Gain from rebalancing</p>
+        <p class="info-item-value" style="color:var(--teal-light)" id="info-gap">+$121,997</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gap box -->
+  <div class="gap-box">
+    <p class="gap-eyebrow">The 7-year wealth gap</p>
+    <p class="gap-desc">The difference between staying put versus a simple rebalance — same dollars, different allocation.</p>
+    <div class="gap-compare">
+      <div class="gap-bucket">
+        <p class="gap-bucket-label">Your current mix</p>
+        <p class="gap-bucket-value" id="gap-current" style="color:var(--text-primary)">$559,061</p>
+        <p class="gap-bucket-sub" id="gap-current-blend" style="color:var(--text-secondary)">Blended: 9.1% / yr</p>
+      </div>
+      <div class="gap-bucket" style="border-color:var(--teal-border)">
+        <p class="gap-bucket-label">Optimized (50% new economy)</p>
+        <p class="gap-bucket-value" id="gap-optimized" style="color:var(--teal)">$681,058</p>
+        <p class="gap-bucket-sub" style="color:var(--teal);opacity:0.8">Blended: 11.5% / yr</p>
+      </div>
+    </div>
+    <div class="gap-highlight">
+      <p id="gap-amount">Rebalancing adds $121,997 over 7 years</p>
+      <span id="gap-context">That's not a different stock picker. That's the same money, repositioned into the right economy. The allocation is the alpha.</span>
+    </div>
+  </div>
+
+  <p class="disclaimer">Growth rates are illustrative assumptions for educational modeling only. Old economy (8%/yr) approximates the long-run S&amp;P 500 average annual total return. New economy (15%/yr) represents a conservative blended estimate for AI hardware, robotics, and energy infrastructure sectors based on recent earnings trajectory — Vertiv revenue +27.7% YoY, Broadcom AI segment revenue doubling, Credo Technology projecting 170%+ growth. Actual investment returns will vary and may be significantly higher or lower. The 50% allocation cap reflects a prudent diversification guideline, not a performance guarantee. Past performance is not indicative of future results. This tool is for educational and illustrative purposes only and does not constitute personalized investment, financial, or legal advice. All investment involves risk. Please consult your professional advisors before making any investment decisions. © The Wealth Society · @thebriandecker</p>
+
+</div>
+
+<script>
+var chart;
+var OLD_RATE = 0.08;
+var NEW_RATE = 0.15;
+var YEARS    = 7;
+var OPT_PCT  = 0.50;
+
+function fmt(n) { return '$' + Math.round(n).toLocaleString(); }
+function fmtD(n) { return (n >= 0 ? '+' : '-') + '$' + Math.round(Math.abs(n)).toLocaleString(); }
+function grow(p, r, y) { return p * Math.pow(1 + r, y); }
+
+function update() {
+  var total  = parseInt(document.getElementById('total-slider').value);
+  var newPct = parseInt(document.getElementById('new-pct-slider').value) / 100;
+  var oldPct = 1 - newPct;
+  var oldAmt = total * oldPct;
+  var newAmt = total * newPct;
+
+  document.getElementById('total-label').textContent   = fmt(total);
+  document.getElementById('new-pct-label').textContent = Math.round(newPct * 100) + '%';
+  document.getElementById('cap-note').textContent      = newPct >= OPT_PCT
+    ? 'Maximum recommended allocation reached — balanced diversification preserved' : '';
+
+  var old7      = grow(oldAmt, OLD_RATE, YEARS);
+  var new7      = grow(newAmt, NEW_RATE, YEARS);
+  var total7    = old7 + new7;
+  var optTotal7 = grow(total * (1 - OPT_PCT), OLD_RATE, YEARS) + grow(total * OPT_PCT, NEW_RATE, YEARS);
+  var gap       = optTotal7 - total7;
+  var blend     = ((oldPct * OLD_RATE + newPct * NEW_RATE) * 100).toFixed(1) + '%';
+
+  document.getElementById('old-today').textContent   = fmt(oldAmt);
+  document.getElementById('old-7yr').textContent     = fmt(old7);
+  document.getElementById('old-gain').textContent    = fmtD(old7 - oldAmt) + ' gain';
+  document.getElementById('new-today').textContent   = fmt(newAmt);
+  document.getElementById('new-7yr').textContent     = fmt(new7);
+  document.getElementById('new-gain').textContent    = fmtD(new7 - newAmt) + ' gain';
+
+  var op = Math.round(oldPct * 100);
+  var np = Math.round(newPct * 100);
+  document.getElementById('bar-old').style.width        = op + '%';
+  document.getElementById('bar-new').style.width        = np + '%';
+  document.getElementById('bar-old-label').textContent  = op > 18 ? op + '% old economy' : op > 7 ? op + '%' : '';
+  document.getElementById('bar-new-label').textContent  = np > 8  ? np + '%' : '';
+
+  document.getElementById('blended-rate').textContent   = blend;
+  document.getElementById('info-total-7yr').textContent = fmt(total7);
+  document.getElementById('info-optimized').textContent = fmt(optTotal7);
+  document.getElementById('info-gap').textContent       = fmtD(gap);
+
+  document.getElementById('gap-current').textContent       = fmt(total7);
+  document.getElementById('gap-current-blend').textContent = 'Blended: ' + blend;
+  document.getElementById('gap-optimized').textContent     = fmt(optTotal7);
+  document.getElementById('gap-amount').textContent        = gap > 0
+    ? 'Rebalancing adds ' + fmt(gap) + ' over 7 years'
+    : 'You are already at the optimized allocation';
+  document.getElementById('gap-context').textContent = gap > 0
+    ? "That's not a different stock picker. That's the same money, repositioned into the right economy. The allocation is the alpha."
+    : "You're fully optimized. The next step is selecting the right names within the new economy themes.";
+
+  var labels  = ['Today','Yr 1','Yr 2','Yr 3','Yr 4','Yr 5','Yr 6','Yr 7'];
+  var mixData = [], optData = [];
+  for (var y = 0; y <= YEARS; y++) {
+    mixData.push(Math.round(grow(oldAmt, OLD_RATE, y) + grow(newAmt, NEW_RATE, y)));
+    optData.push(Math.round(grow(total*(1-OPT_PCT), OLD_RATE, y) + grow(total*OPT_PCT, NEW_RATE, y)));
+  }
+
+  if (chart) {
+    chart.data.datasets[0].data = mixData;
+    chart.data.datasets[1].data = optData;
+    chart.update();
+  } else {
+    chart = new Chart(document.getElementById('growthChart'), {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          { label: 'Your current mix',           data: mixData, borderColor: '#888780', backgroundColor: 'rgba(136,135,128,0.07)', borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: '#888780', fill: true, tension: 0.35 },
+          { label: 'Optimized (50% new economy)', data: optData, borderColor: '#1D9E75', backgroundColor: 'rgba(29,158,117,0.07)',  borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: '#1D9E75',  fill: true, tension: 0.35 }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#1e2330',
+            borderColor: 'rgba(255,255,255,0.1)',
+            borderWidth: 1,
+            titleColor: '#f0f2f5',
+            bodyColor: '#8b91a0',
+            padding: 12,
+            callbacks: { label: function(c){ return c.dataset.label + ': $' + c.parsed.y.toLocaleString(); } }
+          }
+        },
+        scales: {
+          y: {
+            ticks: { color: '#8b91a0', font: { size: 11 }, callback: function(v){ return v>=1000000 ? '$'+(v/1000000).toFixed(2)+'M' : '$'+(v/1000).toFixed(0)+'k'; } },
+            grid: { color: 'rgba(255,255,255,0.04)' },
+            border: { color: 'transparent' }
+          },
+          x: {
+            ticks: { color: '#8b91a0', font: { size: 11 }, maxRotation: 0 },
+            grid: { display: false },
+            border: { color: 'transparent' }
+          }
+        }
+      }
+    });
+  }
+}
+
+update();
+</script>
+</body>
+</html>
